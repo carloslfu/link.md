@@ -354,9 +354,13 @@ limited, landing in the owner's inbox for the curator to accept or reject.
 Nothing enters the store without the owner's side accepting it. Merge
 semantics for concurrent proposals against one record: curator-serialized,
 first-accepted-wins; later proposals are rebased by the accepting agent
-against the new state. (Brain-addressed propose — `POST
-/api/hub/brains/<brain>/inbox` — is the planned generalization; the published
-site is a brain's public door in v1.)
+against the new state.
+
+Brain-addressed propose — `POST /api/hub/brains/<brain>/inbox` — is the
+generalization for bare `@brain` addresses: anonymous callers reach PUBLIC
+brains only (the open door), authenticated callers earn larger actor-class
+budgets, and a self-custodied brain MUST refuse hub-mediated proposals — its
+store is writable only by its key holder (§2.4).
 
 ### 7.5 subscribe
 

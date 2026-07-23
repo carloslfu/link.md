@@ -14,7 +14,7 @@ shipped on crates.io/Homebrew). "Both sides" below means those two.
 | §2.2 Brain-card | **Implemented, both sides** | Served on the brain envelope; verified locally by `dbmd`. |
 | §2.3 Agent keys | **Implemented (v0 shape)** | Client-side keygen (`dbmd key generate` — the secret never leaves the machine) + hub registration (public half only) + per-key revocation and last-use audit. A key authenticates as its owning principal; multikey *grantees* and delegation-chain records are roadmap. |
 | §2.4 Custody — custodied | **Implemented** | Per-brain Ed25519, encrypted at rest, hub signs on push. |
-| §2.4 Custody — self-held | **Roadmap (in build)** | Client-signed entries + hub verify-and-store. |
+| §2.4 Custody — self-held | **Implemented, both sides** | Create with `publicKeySpki` → the hub registers verify-only identity (it cannot lose a key it never held); `dbmd sync --push` with a local brain key signs each entry and ships it through the pack flow; the hub pins signature, chain position, pack hash, manifest set-equality, and the normative serialization, then stores the client's exact bytes. Hub-signed paths refuse with machine codes. |
 | §5 Feed wire profile v1 | **Implemented, both sides** | Producer + verifier in TS; independent verifier in Rust (`dbmd subscribe`); chain, identity, and signature checks per §5.4. |
 | §5.5 Scope-limited reads | **Implemented** | Path-scoped readers receive head movement only. |
 | §6 Grants — prefix scope, read/write, expiry, revocation | **Implemented** | Server-side enforced; grantees are hub accounts in v1 (multikey grantees ride the agent-keys build). |
@@ -22,7 +22,7 @@ shipped on crates.io/Homebrew). "Both sides" below means those two.
 | §7.1 resolve | **Implemented** | Card + record resolution (id and path) for granted callers; a publishing handle resolves for ANY caller — anonymous included — while its brain is public (cross-party resolution v0). |
 | §7.2 sync pull/push | **Implemented** | Pack export with per-file hash verify; push small/large (presign+commit). |
 | §7.3 grant verb | **Implemented** | Issue / list / revoke via `dbmd grant`. |
-| §7.4 propose | **Implemented (site-inbox form)** | The open door with rate limits; brain-addressed propose = extension E4. |
+| §7.4 propose | **Implemented (site inbox + brain-addressed)** | Bare `@brain` propose is live: anonymous on public brains, actor-class rate tiers (stranger / granted / owner), same evidence landing and daily cap. A self-custodied brain refuses hub-mediated proposals (only its key holder writes the store) — the honest boundary, machine-coded. Structured record-change proposals remain E4. |
 | §7.5 subscribe | **Implemented, both sides** | `?after/limit` paging; local §5.4 verification in the open client. |
 | §8 Bearer account keys | **Implemented** | Hashed at rest server-side. |
 | §8 `LinkMD-Sig` proof-of-possession | **Implemented, both sides** | Hub verifies (window before key lookup; path/body/method binding; immediate revocation); `dbmd` signs every authenticated verb when `DBMD_AGENT_KEY_FILE` is set, outranking the bearer. Proven end to end against the production reference hub. |
@@ -32,10 +32,13 @@ shipped on crates.io/Homebrew). "Both sides" below means those two.
 
 Known open edges, stated plainly:
 
-- **No second independent hub implementation yet.** A minimal reference node
-  (`dbmd serve` — serve a local store's card/feed/packs; mirror a remote brain
-  by subscribe-verify-fetch) is in build; until it ships, "any hub" is a
-  design property with one production instance.
+- ~~No second independent hub implementation~~ **RESOLVED**: `dbmd mirror`
+  replicates a brain with full §5.4 chain verification and pins its identity
+  (trust-on-first-use); `dbmd serve` re-serves the mirror over the hub HTTP
+  binding from any machine, and a downstream `dbmd` re-verifies the ORIGINAL
+  signatures with no hub in the loop. Two independent server implementations
+  of the protocol exist, and the export is provable because signatures
+  survive re-hosting.
 - **No public registry.** Handles resolve against the hub that hosts the
   brain; cross-hub resolution is E5.
 - **Propose merge semantics (spec §7.4) have not been exercised under real
