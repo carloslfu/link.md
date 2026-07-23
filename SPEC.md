@@ -266,7 +266,14 @@ expiresAt: <ISO timestamp; absent = until revoked>
 Profile v1 semantics:
 
 - **Attenuation only.** A delegated grant MUST NOT exceed its parent in scope,
-  capability, or lifetime. Chains terminate at the owner.
+  capability, or lifetime. Chains terminate at the owner. A grant carries a
+  `parent` (the grant it attenuates; absent = owner-rooted) and, when a key
+  rather than the owner issued it, the issuer's multikey. A verifier resolves a
+  key's authority by walking parent links to an owner root: every ancestor MUST
+  be live (unrevoked, unexpired), each grant's issuer MUST be its parent's
+  grantee (you may delegate only a grant you hold), and the effective
+  capability/scope is the most restrictive along the whole chain. Revoking any
+  ancestor therefore invalidates the entire subtree with no cascade write.
 - **Revocation wins.** A revoked grant is dead for every party derived from it.
 - **Scope is a path prefix** in v1 — cheap to enforce, covers the real cases
   (a records subtree, a client folder). Frontmatter-query scopes
