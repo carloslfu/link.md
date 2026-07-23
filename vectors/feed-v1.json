@@ -1,0 +1,465 @@
+{
+  "description": "link.md wire profile v1 conformance vectors — signed feed entries (SPEC §5). A conforming verifier accepts every `valid` chain per §5.4 and rejects every `invalid` set for the stated reason. Produced by the TypeScript reference implementation; independently verified by the Rust dbmd client.",
+  "spec": "https://github.com/carloslfu/link.md/blob/main/SPEC.md",
+  "profile": 1,
+  "generated": "2026-07-23",
+  "identity": {
+    "fingerprint": "ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+    "publicKeySpki": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+    "privateKeyPkcs8": "MC4CAQAwBQYDK2VwBCIEIJBQq6vP7vVw-kOTGh6Mp-ceQaerQhikAHwbqrEivd4P",
+    "note": "TEST KEY, published deliberately so any implementation can re-derive every byte. Never reuse."
+  },
+  "valid": [
+    {
+      "name": "three-entry chain: push, edit, edit-with-removal",
+      "head": {
+        "brain": "01k0abcdefghjkmnpqrstvwxyz",
+        "headSeq": 3,
+        "feedHash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a",
+        "identity": {
+          "fingerprint": "ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+          "publicKeySpki": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4"
+        },
+        "entries": [
+          {
+            "hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+            "entry": {
+              "v": 1,
+              "seq": 1,
+              "ts": "2026-07-23T00:00:01.000Z",
+              "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+              "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+              "kind": "push",
+              "op": "snapshot",
+              "pack_sha256": "6e808470fef12de964a8c9a446c1d60f334e6262c4a84ab1721b265659506146",
+              "files": [
+                {
+                  "path": "DB.md",
+                  "sha256": "b5a507d2fc555b66c9a829fcf9a6e2e1e7f351c30af57d9b79d036d8a0bef560",
+                  "bytes": 11
+                },
+                {
+                  "path": "records/note.md",
+                  "sha256": "d5cd8c4150ccdd6969f469a0297f9cc49b0b851ac801415ea842fce7b8ad7026",
+                  "bytes": 8
+                }
+              ],
+              "removed": [],
+              "prev_entry_hash": null,
+              "sig": "LuTyjtV3VdBvGp6sBTqHmNwd1ELP4cQx1MPBrZt-9Ec0TfnScBeAFBMtgY-af_2yDXl0zneycoK5oFXaG5OxDw"
+            }
+          },
+          {
+            "hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+            "entry": {
+              "v": 1,
+              "seq": 2,
+              "ts": "2026-07-23T00:00:02.000Z",
+              "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+              "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+              "kind": "edit",
+              "op": "snapshot",
+              "pack_sha256": "bc32d2bfda48d1429731eeb598927281a9e99803c6da6cdac752a378a2ef57f5",
+              "files": [
+                {
+                  "path": "records/note.md",
+                  "sha256": "4e880fb6c5735c3ce2018a23557429f1ef7c0eb07e2dc0638e4bf955a6665d58",
+                  "bytes": 8
+                }
+              ],
+              "removed": [],
+              "prev_entry_hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+              "sig": "3DaK7U-Ug2cBnQ5qb2G6NPyBDyjWNcH6-G3W1XH_g88M9C5GgqwDf3EsccoTDdgDpFFSQ6hHg61Fcg1R9Io0Ag"
+            }
+          },
+          {
+            "hash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a",
+            "entry": {
+              "v": 1,
+              "seq": 3,
+              "ts": "2026-07-23T00:00:03.000Z",
+              "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+              "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+              "kind": "edit",
+              "op": "snapshot",
+              "pack_sha256": "04b744b2038c45a40f921e5985c66e525c352c84eb4306de5784ff00526516c1",
+              "files": [],
+              "removed": [
+                "records/note.md"
+              ],
+              "prev_entry_hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+              "sig": "x4CTOMHWU7KhxldQZWGeoUMhXOnwMW0qsQsFB0mhHbWqyx0kHEnoT4SyzvkhDE6p47pbdW3bZBSuPptQHD5iCQ"
+            }
+          }
+        ],
+        "nextAfter": 3,
+        "hasMore": false,
+        "scopeLimited": false
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "content tampered (pack_sha256 of entry 2 altered)",
+      "reason": "signature",
+      "entries": [
+        {
+          "hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+          "entry": {
+            "v": 1,
+            "seq": 1,
+            "ts": "2026-07-23T00:00:01.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "push",
+            "op": "snapshot",
+            "pack_sha256": "6e808470fef12de964a8c9a446c1d60f334e6262c4a84ab1721b265659506146",
+            "files": [
+              {
+                "path": "DB.md",
+                "sha256": "b5a507d2fc555b66c9a829fcf9a6e2e1e7f351c30af57d9b79d036d8a0bef560",
+                "bytes": 11
+              },
+              {
+                "path": "records/note.md",
+                "sha256": "d5cd8c4150ccdd6969f469a0297f9cc49b0b851ac801415ea842fce7b8ad7026",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": null,
+            "sig": "LuTyjtV3VdBvGp6sBTqHmNwd1ELP4cQx1MPBrZt-9Ec0TfnScBeAFBMtgY-af_2yDXl0zneycoK5oFXaG5OxDw"
+          }
+        },
+        {
+          "hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+          "entry": {
+            "v": 1,
+            "seq": 2,
+            "ts": "2026-07-23T00:00:02.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "3cfd41512bc835534bc479bb3158d5cab2e5d896fad7829fd0497d03e8334e18",
+            "files": [
+              {
+                "path": "records/note.md",
+                "sha256": "4e880fb6c5735c3ce2018a23557429f1ef7c0eb07e2dc0638e4bf955a6665d58",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+            "sig": "3DaK7U-Ug2cBnQ5qb2G6NPyBDyjWNcH6-G3W1XH_g88M9C5GgqwDf3EsccoTDdgDpFFSQ6hHg61Fcg1R9Io0Ag"
+          }
+        },
+        {
+          "hash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a",
+          "entry": {
+            "v": 1,
+            "seq": 3,
+            "ts": "2026-07-23T00:00:03.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "04b744b2038c45a40f921e5985c66e525c352c84eb4306de5784ff00526516c1",
+            "files": [],
+            "removed": [
+              "records/note.md"
+            ],
+            "prev_entry_hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+            "sig": "x4CTOMHWU7KhxldQZWGeoUMhXOnwMW0qsQsFB0mhHbWqyx0kHEnoT4SyzvkhDE6p47pbdW3bZBSuPptQHD5iCQ"
+          }
+        }
+      ],
+      "feedHash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a"
+    },
+    {
+      "name": "chain tampered (prev_entry_hash of entry 3 altered)",
+      "reason": "chain",
+      "entries": [
+        {
+          "hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+          "entry": {
+            "v": 1,
+            "seq": 1,
+            "ts": "2026-07-23T00:00:01.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "push",
+            "op": "snapshot",
+            "pack_sha256": "6e808470fef12de964a8c9a446c1d60f334e6262c4a84ab1721b265659506146",
+            "files": [
+              {
+                "path": "DB.md",
+                "sha256": "b5a507d2fc555b66c9a829fcf9a6e2e1e7f351c30af57d9b79d036d8a0bef560",
+                "bytes": 11
+              },
+              {
+                "path": "records/note.md",
+                "sha256": "d5cd8c4150ccdd6969f469a0297f9cc49b0b851ac801415ea842fce7b8ad7026",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": null,
+            "sig": "LuTyjtV3VdBvGp6sBTqHmNwd1ELP4cQx1MPBrZt-9Ec0TfnScBeAFBMtgY-af_2yDXl0zneycoK5oFXaG5OxDw"
+          }
+        },
+        {
+          "hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+          "entry": {
+            "v": 1,
+            "seq": 2,
+            "ts": "2026-07-23T00:00:02.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "bc32d2bfda48d1429731eeb598927281a9e99803c6da6cdac752a378a2ef57f5",
+            "files": [
+              {
+                "path": "records/note.md",
+                "sha256": "4e880fb6c5735c3ce2018a23557429f1ef7c0eb07e2dc0638e4bf955a6665d58",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+            "sig": "3DaK7U-Ug2cBnQ5qb2G6NPyBDyjWNcH6-G3W1XH_g88M9C5GgqwDf3EsccoTDdgDpFFSQ6hHg61Fcg1R9Io0Ag"
+          }
+        },
+        {
+          "hash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a",
+          "entry": {
+            "v": 1,
+            "seq": 3,
+            "ts": "2026-07-23T00:00:03.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "04b744b2038c45a40f921e5985c66e525c352c84eb4306de5784ff00526516c1",
+            "files": [],
+            "removed": [
+              "records/note.md"
+            ],
+            "prev_entry_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "sig": "x4CTOMHWU7KhxldQZWGeoUMhXOnwMW0qsQsFB0mhHbWqyx0kHEnoT4SyzvkhDE6p47pbdW3bZBSuPptQHD5iCQ"
+          }
+        }
+      ],
+      "feedHash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a"
+    },
+    {
+      "name": "identity mismatch (brain multikey of entry 2 does not match public_key)",
+      "reason": "identity",
+      "entries": [
+        {
+          "hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+          "entry": {
+            "v": 1,
+            "seq": 1,
+            "ts": "2026-07-23T00:00:01.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "push",
+            "op": "snapshot",
+            "pack_sha256": "6e808470fef12de964a8c9a446c1d60f334e6262c4a84ab1721b265659506146",
+            "files": [
+              {
+                "path": "DB.md",
+                "sha256": "b5a507d2fc555b66c9a829fcf9a6e2e1e7f351c30af57d9b79d036d8a0bef560",
+                "bytes": 11
+              },
+              {
+                "path": "records/note.md",
+                "sha256": "d5cd8c4150ccdd6969f469a0297f9cc49b0b851ac801415ea842fce7b8ad7026",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": null,
+            "sig": "LuTyjtV3VdBvGp6sBTqHmNwd1ELP4cQx1MPBrZt-9Ec0TfnScBeAFBMtgY-af_2yDXl0zneycoK5oFXaG5OxDw"
+          }
+        },
+        {
+          "hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+          "entry": {
+            "v": 1,
+            "seq": 2,
+            "ts": "2026-07-23T00:00:02.000Z",
+            "brain": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "bc32d2bfda48d1429731eeb598927281a9e99803c6da6cdac752a378a2ef57f5",
+            "files": [
+              {
+                "path": "records/note.md",
+                "sha256": "4e880fb6c5735c3ce2018a23557429f1ef7c0eb07e2dc0638e4bf955a6665d58",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+            "sig": "3DaK7U-Ug2cBnQ5qb2G6NPyBDyjWNcH6-G3W1XH_g88M9C5GgqwDf3EsccoTDdgDpFFSQ6hHg61Fcg1R9Io0Ag"
+          }
+        },
+        {
+          "hash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a",
+          "entry": {
+            "v": 1,
+            "seq": 3,
+            "ts": "2026-07-23T00:00:03.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "04b744b2038c45a40f921e5985c66e525c352c84eb4306de5784ff00526516c1",
+            "files": [],
+            "removed": [
+              "records/note.md"
+            ],
+            "prev_entry_hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+            "sig": "x4CTOMHWU7KhxldQZWGeoUMhXOnwMW0qsQsFB0mhHbWqyx0kHEnoT4SyzvkhDE6p47pbdW3bZBSuPptQHD5iCQ"
+          }
+        }
+      ],
+      "feedHash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a"
+    },
+    {
+      "name": "sequence gap (entry 2 missing)",
+      "reason": "sequence",
+      "entries": [
+        {
+          "hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+          "entry": {
+            "v": 1,
+            "seq": 1,
+            "ts": "2026-07-23T00:00:01.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "push",
+            "op": "snapshot",
+            "pack_sha256": "6e808470fef12de964a8c9a446c1d60f334e6262c4a84ab1721b265659506146",
+            "files": [
+              {
+                "path": "DB.md",
+                "sha256": "b5a507d2fc555b66c9a829fcf9a6e2e1e7f351c30af57d9b79d036d8a0bef560",
+                "bytes": 11
+              },
+              {
+                "path": "records/note.md",
+                "sha256": "d5cd8c4150ccdd6969f469a0297f9cc49b0b851ac801415ea842fce7b8ad7026",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": null,
+            "sig": "LuTyjtV3VdBvGp6sBTqHmNwd1ELP4cQx1MPBrZt-9Ec0TfnScBeAFBMtgY-af_2yDXl0zneycoK5oFXaG5OxDw"
+          }
+        },
+        {
+          "hash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a",
+          "entry": {
+            "v": 1,
+            "seq": 3,
+            "ts": "2026-07-23T00:00:03.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "04b744b2038c45a40f921e5985c66e525c352c84eb4306de5784ff00526516c1",
+            "files": [],
+            "removed": [
+              "records/note.md"
+            ],
+            "prev_entry_hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+            "sig": "x4CTOMHWU7KhxldQZWGeoUMhXOnwMW0qsQsFB0mhHbWqyx0kHEnoT4SyzvkhDE6p47pbdW3bZBSuPptQHD5iCQ"
+          }
+        }
+      ],
+      "feedHash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a"
+    },
+    {
+      "name": "advertised head mismatch (feedHash is not the last entry's hash)",
+      "reason": "head",
+      "entries": [
+        {
+          "hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+          "entry": {
+            "v": 1,
+            "seq": 1,
+            "ts": "2026-07-23T00:00:01.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "push",
+            "op": "snapshot",
+            "pack_sha256": "6e808470fef12de964a8c9a446c1d60f334e6262c4a84ab1721b265659506146",
+            "files": [
+              {
+                "path": "DB.md",
+                "sha256": "b5a507d2fc555b66c9a829fcf9a6e2e1e7f351c30af57d9b79d036d8a0bef560",
+                "bytes": 11
+              },
+              {
+                "path": "records/note.md",
+                "sha256": "d5cd8c4150ccdd6969f469a0297f9cc49b0b851ac801415ea842fce7b8ad7026",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": null,
+            "sig": "LuTyjtV3VdBvGp6sBTqHmNwd1ELP4cQx1MPBrZt-9Ec0TfnScBeAFBMtgY-af_2yDXl0zneycoK5oFXaG5OxDw"
+          }
+        },
+        {
+          "hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+          "entry": {
+            "v": 1,
+            "seq": 2,
+            "ts": "2026-07-23T00:00:02.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "bc32d2bfda48d1429731eeb598927281a9e99803c6da6cdac752a378a2ef57f5",
+            "files": [
+              {
+                "path": "records/note.md",
+                "sha256": "4e880fb6c5735c3ce2018a23557429f1ef7c0eb07e2dc0638e4bf955a6665d58",
+                "bytes": 8
+              }
+            ],
+            "removed": [],
+            "prev_entry_hash": "115d34fe8f8375fae7e82208d679e9031eaf092cdd2ab9aa1c0294e9b9d7abaf",
+            "sig": "3DaK7U-Ug2cBnQ5qb2G6NPyBDyjWNcH6-G3W1XH_g88M9C5GgqwDf3EsccoTDdgDpFFSQ6hHg61Fcg1R9Io0Ag"
+          }
+        },
+        {
+          "hash": "50215474e01bb4698729fb1bab1befad430b95011a4d3fba35877591e8418d7a",
+          "entry": {
+            "v": 1,
+            "seq": 3,
+            "ts": "2026-07-23T00:00:03.000Z",
+            "brain": "ed25519:ytUalMZXa86de4qRDBYzlj1TrNnGHPSztfYhVoFfoMM",
+            "public_key": "MCowBQYDK2VwAyEAOCFVH30p3nNC7Xd1PMHEsyYJv2TXFFDun0rsBYHRah4",
+            "kind": "edit",
+            "op": "snapshot",
+            "pack_sha256": "04b744b2038c45a40f921e5985c66e525c352c84eb4306de5784ff00526516c1",
+            "files": [],
+            "removed": [
+              "records/note.md"
+            ],
+            "prev_entry_hash": "f6571c54b7e19b80fce21f134a51ef62f5612b99dd4b537bd49f54dc87d81769",
+            "sig": "x4CTOMHWU7KhxldQZWGeoUMhXOnwMW0qsQsFB0mhHbWqyx0kHEnoT4SyzvkhDE6p47pbdW3bZBSuPptQHD5iCQ"
+          }
+        }
+      ],
+      "feedHash": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}
