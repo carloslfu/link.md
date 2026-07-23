@@ -358,9 +358,12 @@ against the new state.
 
 Brain-addressed propose — `POST /api/hub/brains/<brain>/inbox` — is the
 generalization for bare `@brain` addresses: anonymous callers reach PUBLIC
-brains only (the open door), authenticated callers earn larger actor-class
-budgets, and a self-custodied brain MUST refuse hub-mediated proposals — its
-store is writable only by its key holder (§2.4).
+brains only (the open door), authenticated callers (user or key) earn larger
+actor-class budgets. A self-custodied brain (§2.4) MUST NOT have proposals
+signed into its store by the hub — only its key holder writes it — so the hub
+QUEUES the submission outside the store and returns 202; the owner's agent
+drains the queue (read → write locally → push signed → acknowledge). The hub
+is a mailbox there, never an author.
 
 ### 7.5 subscribe
 
@@ -409,7 +412,10 @@ because it never travels.
 Identity rotation is a **rotation statement**: a declaration binding the new
 key, signed by the **old** key, appended to the brain's history. A verifier
 that trusts fingerprint F and sees a valid rotation F→F′ SHOULD trust F′ and
-treat F as historical. Chains of rotations verify transitively.
+treat F as historical. Chains of rotations verify transitively. A brain-card
+MAY carry a `previous` list of prior identities; a feed entry verifies when it
+is signed by the current identity OR any listed previous one, so rotation
+never invalidates history.
 
 ### 9.2 Recovery
 
