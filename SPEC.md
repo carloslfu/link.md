@@ -461,8 +461,8 @@ advertises what it supports; the core never breaks. Reserved slots:
 | E2 | Record-grade feed ops (per-record entries beside `snapshot`) |
 | E3 | Push transports for subscribe (SSE/webhooks) |
 | E4 | Brain-addressed propose + structured record-change proposals |
-| E5 | Public registries + cross-hub handle resolution |
-| E6 | Key facets (algorithm bindings beyond ed25519, e.g. secp256k1) |
+| E5 | Public registries + cross-hub handle resolution *(v0 implemented — the resolver + proof-of-control registration; name-dispute governance is policy)* |
+| E6 | Key facets beyond ed25519 *(secp256k1/npub implemented hub-side — the hub verifies BIP340 and grants accept npubs)* |
 
 ## 12. Non-goals
 
