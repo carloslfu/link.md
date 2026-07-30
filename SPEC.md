@@ -408,9 +408,15 @@ canonical = "v1" LF method LF path-and-query LF ts LF (sha256hex(body) | "-")
 
 The hub verifies the signature with the registered public key for `key`,
 enforces a ±60 second window on `ts`, and binds the signature to the exact
-method, path, and body. Nothing reusable ever crosses the wire, appears in a
-log, or lands in an agent transcript — the credential cannot leak in transit
-because it never travels.
+method, path, and body. The private credential never crosses the wire.
+
+The signed envelope itself is replayable until its timestamp leaves that
+window. A hub MUST durably claim each exact signed envelope at most once before
+executing a mutating request and MUST fail closed when that replay store is
+unavailable. Safe reads (`GET`, `HEAD`, `OPTIONS`) MAY repeat the same envelope.
+Clients retrying a refused mutation MUST sign a fresh timestamp. This closes
+the gap between proof of key possession and proof that one mutation was
+authorized only once.
 
 ## 9. Rotation, recovery, and pinning
 

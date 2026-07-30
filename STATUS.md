@@ -26,7 +26,7 @@ shipped on crates.io/Homebrew). "Both sides" below means those two.
 | §7.4 propose | **Implemented (site inbox + brain-addressed + pull-drained)** | Bare `@brain` propose is live: anonymous on public brains, actor-class rate tiers (stranger / granted-user / granted-key / owner), same evidence landing and daily cap. A self-custodied brain QUEUES submissions outside the store (202) — the owner's agent drains them (read → write locally → push signed → DELETE-ack) — because only the key holder writes the store. Structured record-change proposals remain E4. |
 | §7.5 subscribe | **Implemented, both sides** | `?after/limit` paging; local §5.4 verification in the open client. |
 | §8 Bearer account keys | **Implemented** | Hashed at rest server-side. |
-| §8 `LinkMD-Sig` proof-of-possession | **Implemented, both sides** | Hub verifies (window before key lookup; path/body/method binding; immediate revocation); `dbmd` signs every authenticated verb when `DBMD_AGENT_KEY_FILE` is set, outranking the bearer. Proven end to end against the production reference hub. |
+| §8 `LinkMD-Sig` proof-of-possession | **Implemented, both sides** | Hub verifies (window before key lookup; path/body/method binding; immediate revocation); mutating envelopes are durably one-shot through the shared replay store and fail closed when it is unavailable; safe reads may repeat. `dbmd` signs every authenticated verb when `DBMD_AGENT_KEY_FILE` is set, outranking the bearer. Proven end to end against the production reference hub. |
 | §9 Rotation / recovery / pinning | **Implemented, both sides** | `dbmd key rotate` on a self-custody brain signs the §9.1 statement with the old key; the hub also self-rotates a custodied key; the old identity moves into `previous` and every pre-rotation feed entry keeps verifying (proven live). `dbmd mirror`/`serve` carry `previous`. Recovery beyond rotation, and pinning enforcement in the hub client, stay per §9.2/§9.3. |
 | §10 Conformance vectors | **Implemented, both directions** | `vectors/` produced by one implementation, verified by the other. |
 | E5 public registry (cross-hub handle resolution) | **Implemented (v0)** | `GET /api/hub/registry/<handle>` resolves any handle to { identity, home, brain } for any client; external homes are claimed by PROOF OF KEY CONTROL (the registration is signed by the key it names) so a squatter can grab a free name but only point it at a key they hold, and every resolver pins the key. `dbmd resolve @handle` follows direct-first, then the registry, fetching the card from the home and refusing an identity mismatch. Proven live (proof-of-control registration + follow + pin + revoke) and hermetically across two nodes. Name-dispute governance (beyond reserved names + report/takedown) is policy, not code. |
@@ -42,7 +42,5 @@ Known open edges, stated plainly:
   signatures with no hub in the loop. Two independent server implementations
   of the protocol exist, and the export is provable because signatures
   survive re-hosting.
-- **No public registry.** Handles resolve against the hub that hosts the
-  brain; cross-hub resolution is E5.
 - **Propose merge semantics (spec §7.4) have not been exercised under real
   concurrent contention.**
