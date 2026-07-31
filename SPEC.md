@@ -229,9 +229,24 @@ A verifier processing entries `after..head` MUST check, per entry:
    a pinned fingerprint);
 5. `sig` verifies over the §5.2 bytes.
 
-A verifier at the head SHOULD additionally check the served head state
-(§7.1's `headSeq`/`feedHash`) against the last entry's hash, and MAY check
-`pack_sha256` against separately fetched content.
+A verifier at the head MUST check the served head state (§7.1's
+`headSeq`/`feedHash`) against the last entry's sequence and hash. A full-store
+sync or mirror MUST fetch the exact snapshot addressed by that tuple, verify
+its pack hash against the signed head's `pack_sha256`, and verify the complete
+resulting path/hash/byte manifest before making any destination mutation
+visible. It MUST persist the accepted `(headSeq, feedHash)` checkpoint outside
+the store and reject a lower sequence or a different hash at the same
+sequence. Export must never silently advance to a newer head.
+
+The HTTP binding for an immutable full-store export is:
+
+```
+GET /api/hub/brains/<brain>/export?format=pack&atSeq=<headSeq>&feedHash=<feedHash>
+```
+
+The response MUST echo the same brain, sequence, feed hash, and signed pack
+hash or fail with a conflict. The sole empty-head address is
+`atSeq=0&feedHash=none`; it carries no pack URL.
 
 ### 5.5 Scope-limited readers
 
@@ -402,13 +417,22 @@ Two client authentication methods:
 - **Signed requests (proof of possession)** — for key-holding actors (§2.3):
 
 ```
-Authorization: LinkMD-Sig v1,key=<multikey>,ts=<unix-seconds>,sig=<base64url(ed25519(canonical))>
-canonical = "v1" LF method LF path-and-query LF ts LF (sha256hex(body) | "-")
+Authorization: LinkMD-Sig v2,key=<multikey>,ts=<unix-seconds>,sig=<base64url(signature)>
+canonical = "v2" LF origin LF method LF path-and-query LF ts LF (sha256hex(body) | "-")
 ```
 
 The hub verifies the signature with the registered public key for `key`,
 enforces a ±60 second window on `ts`, and binds the signature to the exact
-method, path, and body. The private credential never crosses the wire.
+origin, method, path, and body. `origin` is the externally authoritative
+request origin, never a caller-selected forwarding header: lowercase
+HTTP(S) scheme and IDNA host, the default port elided and a non-default port
+retained, with no path, query, fragment, or trailing slash. `method` is
+uppercase. `path-and-query` is the exact request target used on the wire. The
+body hash is lowercase hexadecimal SHA-256 of the exact request body bytes, or
+the literal `-` when there is no body. There is no trailing LF. A signature
+captured at one origin therefore cannot authenticate at another. v1 is
+invalid; implementations MUST NOT silently fall back. The private credential
+never crosses the wire.
 
 The signed envelope itself is replayable until its timestamp leaves that
 window. A hub MUST durably claim each exact signed envelope at most once before
@@ -423,12 +447,37 @@ authorized only once.
 ### 9.1 Rotation
 
 Identity rotation is a **rotation statement**: a declaration binding the new
-key, signed by the **old** key, appended to the brain's history. A verifier
-that trusts fingerprint F and sees a valid rotation F→F′ SHOULD trust F′ and
-treat F as historical. Chains of rotations verify transitively. A brain-card
-MAY carry a `previous` list of prior identities; a feed entry verifies when it
-is signed by the current identity OR any listed previous one, so rotation
-never invalidates history.
+key and the current feed boundary, signed by the **old** key:
+
+```json
+{
+  "v": 1,
+  "op": "rotate",
+  "brain": "<old multikey>",
+  "public_key": "<old base64url SPKI>",
+  "new_brain": "<new multikey>",
+  "new_public_key": "<new base64url SPKI>",
+  "prior_head_seq": 41,
+  "prior_feed_hash": "<entry hash, or null iff sequence is zero>",
+  "ts": "2026-07-30T00:00:00.000Z",
+  "sig": "<base64url Ed25519 signature>"
+}
+```
+
+The field order above is normative. `sig` covers the exact minimal JSON
+serialization without `sig`, using that order. A hub accepts the statement
+only when `(prior_head_seq, prior_feed_hash)` atomically equals its current
+head, persists the exact statement, and serves the oldest-first chain with the
+brain card. A verifier that trusts fingerprint F and verifies a connected
+F→F′ statement SHOULD trust F′ and treat F as historical. Chains verify
+transitively.
+
+The old key may sign feed entries only through its statement's
+`prior_head_seq`; the new key may sign only later entries. Rotation boundaries
+MUST be monotonic, and every non-empty `prior_feed_hash` MUST match the stored
+entry bytes at that sequence. A card's unproved `previous` list is never
+authority by itself. These epoch rules preserve historical verification
+without letting a retired key append after rotation.
 
 ### 9.2 Recovery
 
@@ -441,9 +490,13 @@ never invalidates history.
 
 ### 9.3 Pinning
 
-A client that has synced a brain SHOULD pin its fingerprint in local toolkit
-state (outside the store) and MUST refuse subsequent responses presenting a
-different identity absent a valid rotation chain. First contact is
+A client that has synced a brain SHOULD pin its fingerprint together with the
+accepted `(headSeq, feedHash)` in local toolkit state (outside the store) and
+MUST refuse subsequent responses presenting a different identity absent a
+valid old-key-signed rotation chain from that pin. Every authenticated verb
+uses the same pin and rotation policy. A successful advancement writes the
+new identity and checkpoint only after the exact response has verified and
+the destination transition can commit atomically. First contact is
 trust-on-first-use unless the fingerprint arrived out of band.
 
 ## 10. Conformance
