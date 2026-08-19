@@ -1,6 +1,16 @@
 # Conformance vectors
 
-Cross-implementation test vectors for **wire profile v1** (SPEC §5, §10).
+Cross-implementation test vectors for **wire profiles v1 and v2** (SPEC §5,
+§10).
+
+## v2-content-tree.json and v2-portable-paths.json
+
+The v2 vectors pin the domain-separated content-tree root, hiding-proof privacy
+expectations, and the portable path decisions shared by the TypeScript hub and
+Rust `dbmd`. The path corpus includes NFC, case aliases, Windows reserved names,
+separator/ADS forms, control bytes, and accepted Unicode/device-name edges. Both
+implementations consume byte-identical copies and independently run randomized
+map/tree order-equivalence tests.
 
 ## feed-v1.json
 
