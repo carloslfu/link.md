@@ -412,8 +412,43 @@ The reference binding is rooted at
 | `POST uploads` | reserve direct transport for changed blobs |
 | `POST commits` | atomically authorize, validate, back up, and commit a changeset |
 | `GET signing-challenges/<id>?after=…&limit=…` | proof-carried exact candidate for self-custody verification/signing |
+| `GET proposals?state=…&after=…&limit=…` | list permission-filtered proposal envelopes without changed bytes |
+| `GET proposals/<id>` | return one verified proposal descriptor and signed submission claim |
+| `GET proposals/<id>/blob?sha256=…` | return one exact declared proposal blob after use-time authorization |
+| `DELETE proposals/<id>` | reject one pending proposal with an idempotent audited decision |
 | `GET history`, `GET history/blob`, `GET diff`, `GET trash` | permission-filtered history and recovery reads |
 | `GET/POST grants`, `DELETE grants/<id>`, `GET/PATCH policy` | v2 authority and company policy control plane |
+
+A caller may send `proposal_only:true` to `POST commits`; a self-custodied
+scoped writer is also routed there automatically because it cannot verify or
+sign a brain-wide candidate. The hub authorizes the operations, encrypts the
+canonical descriptor and each new blob under brain/proposal-specific keys,
+writes independent retention backup copies, and returns a fixed-shape `202
+proposal_queued` own-effect receipt. The receipt exposes no head, root, or
+unrelated path.
+
+The hub signs an immutable proposal-submission claim over the proposer actor
+root, brain/proposal/mutation IDs, encrypted-payload address, clear descriptor
+digest, control revision, and submission time. Review clients MUST verify the
+claim's canonical bytes, domain-separated address, Ed25519 signature, pinned
+hub signer, exact descriptor digest, sorted unique blob declarations, and
+origin-bound blob endpoints before displaying or accepting it. Changed blobs
+MUST be fetched one at a time and checked against their declared length and
+SHA-256.
+
+Exact acceptance re-submits the proposal operations to `POST commits` with
+`proposal_id` and `proposal_mode:"exact"`. The hub rechecks reviewer authority,
+proposal state/expiry, proposer revocation, every path precondition, protected
+semantic effects, and the current head. The accepting commit's signed actor
+claim names the accepter and references the signed proposal claim and proposer;
+the proposal changes from pending to accepted in the same authority transaction
+as pointer CAS. A post-pointer repair may complete only after independently
+verifying that exact reference in the immutable committed actor claim. Modified
+acceptance is a distinct newly authorized mutation with
+`proposal_mode:"modified"`; an agent may construct it, but the agent never
+decides concurrency or permissions. Rejection requires the current control
+revision, stable decision mutation ID, reason, and independent encrypted
+before/after control recovery evidence.
 
 A brain selects exactly one write profile at a time. A v2 brain MUST refuse v1
 snapshot writers with a typed negotiation response; a non-empty v1 brain MUST
@@ -509,7 +544,12 @@ exact file or path prefix and carries a set of actions such as `read_current`,
 `read_history`, `create_record`, `update_record`, `delete_record`,
 `append_source`, `withdraw_source`, `append_log`, `curate_conclusion`,
 `write_contract`, `manage_assets`, `publish_content`, `replace_scope`,
-`bulk_change`, `restore_version`, and separate administration/audit actions.
+`bulk_change`, `restore_version`, `propose_change`, `review_proposals`, and
+separate administration/audit actions. `propose_change` can enqueue a scoped
+candidate but cannot inspect the queue. `review_proposals` is separately
+required, together with a full readable view, to list, inspect, accept, or
+reject candidates. This separation prevents both a proposer and a content-blind
+organization administrator from turning the queue into a read oracle.
 History authority includes an issuance boundary. Organization administrators
 receive control-plane authority, not implicit content access; org content is
 restricted unless an explicit grant or declared all-members content preset
