@@ -409,7 +409,7 @@ The reference binding is rooted at
 | `GET files?commit=…&after=…&limit=…` | current readable manifest plus proofs |
 | `GET blob?commit=…&path=…&sha256=…` | one proven, readable blob |
 | `POST downloads` | verify bounded manifest proofs and mint short-lived direct blob GET capabilities |
-| `POST uploads` | reserve direct transport for changed blobs |
+| `POST uploads` | reserve direct transport for changed blobs, bound to their exact content/asset coordinates |
 | `POST commits` | atomically authorize, validate, back up, and commit a changeset |
 | `GET signing-challenges/<id>?after=…&limit=…` | proof-carried exact candidate for self-custody verification/signing |
 | `GET proposals?state=…&after=…&limit=…` | list permission-filtered proposal envelopes without changed bytes |
@@ -417,7 +417,8 @@ The reference binding is rooted at
 | `GET proposals/<id>/blob?sha256=…` | return one exact declared proposal blob after use-time authorization |
 | `DELETE proposals/<id>` | reject one pending proposal with an idempotent audited decision |
 | `GET history`, `GET history/blob`, `GET diff`, `GET trash` | permission-filtered history and recovery reads |
-| `GET/POST grants`, `DELETE grants/<id>`, `GET/PATCH policy` | v2 authority and company policy control plane |
+| `GET/POST grants`, `DELETE grants/<id>`, `GET/PATCH policy` | v2 authority and brain policy control plane |
+| `GET/POST hosting-policy` | ordered brain/organization hosting denies and forward-only impact state |
 
 A caller may send `proposal_only:true` to `POST commits`; a self-custodied
 scoped writer is also routed there automatically because it cannot verify or
@@ -467,6 +468,18 @@ Capabilities are short-lived and address immutable objects; the client MUST
 still rehash every response and complete the final head barrier. This batching
 reduces hub authorization traffic without turning a content hash into a bearer
 capability or weakening per-principal rate limits.
+
+Every direct-upload declaration carries the exact sorted path coordinates that
+will reference its bytes. Content uses its ordinary store path; assets use the
+virtual `assets/<path>` authorization namespace. The hub authorizes those
+coordinates and applies every pre-staging hosting deny before it issues a PUT
+capability. The reservation is principal-bound and can satisfy only a commit
+whose exact hash-to-coordinate set matches it. Final commit authorization
+re-resolves all permissions and all final-phase denies. An organization deny is
+inherited monotonically by its brains and cannot be overridden by a brain rule.
+Adding or removing a deny is forward-only: it proves neither that older content
+was never committed nor that its bytes never reached staging or durable
+storage.
 
 #### 5.7.5 Local three-way sync
 
