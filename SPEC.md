@@ -3,7 +3,7 @@
 **The interconnect standard for db.md stores: how brains address, identify,
 sign, exchange, and grant.**
 
-Version: **v0 (DRAFT)** · Wire profile: **v1** · License: Apache-2.0
+Version: **v0 (DRAFT)** · Wire profiles: **v1 + v2** · License: Apache-2.0
 
 ---
 
@@ -264,7 +264,185 @@ The one mechanism is simultaneously:
 - **replication** — a follower replays entries and fetches content by hash;
 - **subscription** — deltas since seq N;
 - **the verifiable export** — feed + files = a provable full copy, portable to
-  any other home. Ownership by openness is this property, made mechanical.
+any other home. Ownership by openness is this property, made mechanical.
+
+### 5.7 Wire profile v2: permissioned incremental commits
+
+Profile v2 keeps the signed, append-only feed but replaces whole-store packs
+as the write primitive. A commit still names one complete logical brain state;
+the physical objects written for it are only the changed blobs, changed tree
+nodes, changeset, actor claim, commit, receipt, and recovery delta. This is the
+same separation Git makes between a commit's complete tree and its reused
+content-addressed objects, with server-enforced company permissions added.
+
+#### 5.7.1 Canonical bytes and addresses
+
+Every v2 JSON object is UTF-8, has exactly one trailing LF, sorts object keys by
+their UTF-8 bytes, preserves array order, adds no whitespace, and permits only
+`null`, booleans, strings, arrays, objects, and safe integers. A domain address
+is:
+
+```
+sha256("link.md\0" || <domain> || "\0" || <canonical-bytes>)
+```
+
+Blobs alone use SHA-256 over their exact raw bytes. Implementations MUST reject
+non-canonical encodings rather than normalize signed or addressed input.
+
+The v2 content root is a persistent 16-way hash-array mapped trie. Each path
+component is a leaf with `{name, kind, child_hash, bytes, nonce}`; its route is
+SHA-256 over the component plus the random 128-bit nonce. Branches expose slot
+and child hash only. This gives compact inclusion/non-inclusion proofs without
+revealing sibling names to a scoped reader. A commit reuses every unchanged
+blob and tree node. `null` is the sole empty content root. Portable paths MUST
+be NFC, relative, slash-separated, at most 1,024 UTF-8 bytes and 255 bytes per
+component, and free of dot components, control characters, Windows device
+names, trailing dots/spaces, file/directory collisions, and Unicode/case-folded
+portable aliases.
+
+#### 5.7.2 Mutations
+
+A changeset has `v:2`, a stable caller-generated `mutation_id`, an optional
+reason, and a deterministically sorted, non-overlapping operation list:
+
+- `put(path, expected, blob, bytes)` creates or replaces a file;
+- `delete(path, expected-blob)` removes a file;
+- `rename(from, expected_from, to, expected_to, blob, bytes)` moves one exact
+  byte version without inferring identity from a later path;
+- `restore(path, source_seq, source_commit, source_path, expected, blob,
+  bytes)` restores exact authorized historical bytes;
+- `withdraw_from_hosting(path, expected-blob, reason)` removes the hosted
+  coordinate while recording that stronger lifecycle intent.
+
+Every touched coordinate carries an exact precondition: `{kind:"absent"}` or
+`{kind:"blob",hash:<sha256>}`. Omitting preconditions is invalid. A hub applies
+the whole changeset or none of it. If the base is stale, `rebase:"disjoint"`
+MAY apply it only when every touched coordinate still satisfies its
+precondition; `strict` requires the exact head. A request whose authorized
+desired bytes are already current converges as a no-op. Any other same-path or
+rename-destination mismatch returns one atomic conflict set. An LLM may propose
+new bytes after a conflict, but it is never the concurrency mechanism and the
+hub never silently chooses a winner.
+
+`mutation_id` is idempotent per stable principal and brain. Repeating the same
+request returns its durable receipt; reusing the ID for different request bytes
+MUST fail. Inline changed blobs are bounded; larger changed blobs use expiring,
+principal-bound reservations and direct conditional upload. Before commit, the
+hub MUST re-read and re-hash every reserved object.
+
+#### 5.7.3 Signed commit and head
+
+The brain key signs the canonical commit object. Its normative fields are:
+`v`, `seq`, `ts`, `brain`, `public_key`, `signer_epoch`, `control_revision`,
+`op:"changeset"`, `parent_commit`, `parent_root`, `state_root`,
+`parent_asset_root`, `asset_root`, `materializer`, `changes_hash`, `actor_ref`,
+and `prev_entry_hash`. The Ed25519 signature covers the canonical bytes of
+those fields without `sig`; the stored canonical object then adds `sig`. The
+commit hash uses domain `v2/commit`; the feed hash is plain SHA-256 of the exact
+signed commit bytes. `prev_entry_hash` chains those feed hashes.
+
+`actor_ref` addresses a separately signed actor claim bound to the principal,
+credential class, organization/role, grants used, mutation/request IDs,
+parent/result roots, counts, rebase result, control revision, and authorization
+time. The claim is audit evidence, not authority by itself; the hub MUST resolve
+live authority again at the final commit point.
+
+The mutable head is a hub-signed pointer to `{brain, seq, commit_hash,
+feed_hash, content_root, asset_root, materializer, signer_epoch,
+control_revision, backup_preparation, prior_pointer_hash, signed_at}`. The hub
+MUST compare-and-set this pointer against the exact prior pointer. It MUST make
+the required recovery delta durable before pointer advancement. A client pins
+the brain identity and hub pointer signer, verifies commit signatures and feed
+continuity, verifies every manifest proof and fetched blob, checks the head
+again after local installation or after its write, and only then advances its
+private accepted checkpoint. A lower sequence or different hash at an accepted
+sequence is rollback/equivocation.
+
+`materializer` names the deterministic hosted derived-state transform. The
+reference `dbmd-hosted-v1` transform rebuilds `index.md`/`index.jsonl` from the
+candidate source files after actor authorization and before whole-brain
+validation. It MUST change derived paths only. Its outputs are part of the
+signed content root and recovery delta, while the actor changeset continues to
+name the authorized source intent. Sync manifests omit these hosted catalogs;
+each full or scoped checkout rebuilds catalogs from exactly its readable view.
+
+The authenticated head response also labels the caller's effective content
+view as `full` or `scoped` and carries the current actor-specific control
+revision. This view descriptor is not part of the brain commit: permissions can
+change without changing content. A client MUST include it in both pre-install
+and post-commit barriers. Once a checkout pins a scoped view, a different view
+kind or control revision requires a new checkout; it MUST NOT silently widen,
+narrow, or repurpose the existing directory.
+
+#### 5.7.4 HTTP binding
+
+The reference binding is rooted at
+`/api/hub/brains/<brain>/v2/`:
+
+| Method/path | Meaning |
+| --- | --- |
+| `GET head` | profile negotiation, signed current pointer, brain identity, effective permission view |
+| `GET commit?commit=…` | exact canonical signed commit bytes |
+| `GET feed?after=…&limit=…` | bounded contiguous commit replay |
+| `GET files?commit=…&after=…&limit=…` | current readable manifest plus proofs |
+| `GET blob?commit=…&path=…&sha256=…` | one proven, readable blob |
+| `POST downloads` | verify bounded manifest proofs and mint short-lived direct blob GET capabilities |
+| `POST uploads` | reserve direct transport for changed blobs |
+| `POST commits` | atomically authorize, validate, back up, and commit a changeset |
+| `GET history`, `GET history/blob`, `GET diff`, `GET trash` | permission-filtered history and recovery reads |
+| `GET/POST grants`, `DELETE grants/<id>`, `GET/PATCH policy` | v2 authority and company policy control plane |
+
+A brain selects exactly one write profile at a time. A v2 brain MUST refuse v1
+snapshot writers with a typed negotiation response; a non-empty v1 brain MUST
+not accept v2 writes until an explicit, verified bridge commits its initial v2
+root. There is no automatic two-head mode.
+After a client accepts a v2 checkpoint for a brain reference, a hidden/404 v2
+head MUST be treated uniformly as unavailable (revoked, removed, or hidden).
+It MUST NOT trigger v1 negotiation or erase/replace local checkout files.
+
+A download window carries the exact inclusion proof returned by `files`, bound
+to the requested commit, path, blob hash, and byte count. The hub MUST verify
+the proof against the current content root and resolve live read authority for
+every path before minting any capability. The request is atomic for authority:
+one unauthorized, malformed, duplicate, or mismatched claim yields no URLs.
+Capabilities are short-lived and address immutable objects; the client MUST
+still rehash every response and complete the final head barrier. This batching
+reduces hub authorization traffic without turning a content hash into a bearer
+capability or weakening per-principal rate limits.
+
+#### 5.7.5 Local three-way sync
+
+The client stores its accepted remote manifest and its local transfer-policy
+state outside the db.md store. For each path it compares baseline, current
+remote, and current local hashes. Pull removes a local file only when that path
+was baseline-known, the remote deleted it, and the local bytes are unchanged.
+Push emits a delete only when the same baseline proves the local absence is an
+intentional change. Files excluded by `.sevralocal` are never opened for
+transport and their existing remote copies are not implicitly deleted. If a
+local-policy relaxation makes a formerly excluded path eligible, ordinary sync
+stops for explicit adoption before uploading it.
+
+A permission-scoped manifest is not necessarily a complete db.md store and may
+withhold canonical `DB.md`. The client therefore materializes a deterministic,
+clearly non-authoritative local `DB.md` plus `.dbmd/view.json` projection
+metadata. Neither file is remote brain data: they are excluded from the
+baseline's riding-file set and from every mutation. Editing or removing the
+generated `DB.md` fails closed. Canonical schema and semantic validation always
+run at the hub against the complete brain, not against the scoped projection.
+Local validation rebuilds the view's catalogs and reports links leaving the
+view as unresolved-withheld information without asserting that the hidden
+target is absent. If the complete-brain gate refuses a candidate, the hub MAY
+return structured issues only for paths the actor can currently read; every
+issue and related path outside that view MUST be omitted. The client preserves
+those safe details under a stable validation-refusal machine code.
+Scope widening or narrowing starts a new verified view rather than merging
+newly visible or newly forbidden paths into an existing checkout.
+
+The local operation is serialized per brain. A pull uses head H1, verifies the
+manifest/blobs, installs atomically, then requires H2 = H1 before saving its
+baseline. A push requires the accepted commit still be the current head and
+rescans local bytes before reporting clean. Concurrent editor activity is
+reported as local-dirty; it never rewrites the remote receipt.
 
 ## 6. Grants
 
@@ -301,6 +479,21 @@ Profile v1 semantics:
   shape is identical, so upgrading a grantee to a multikey is a field change,
   not a migration. Not RBAC, not blockchain: object capabilities
   (UCAN/macaroon lineage) with the owner as the root of every chain.
+
+Profile v2 retains attenuation, expiry, revocation, and server-side enforcement
+and makes the authorization vocabulary explicit. A grant is scoped to one
+exact file or path prefix and carries a set of actions such as `read_current`,
+`read_history`, `create_record`, `update_record`, `delete_record`,
+`append_source`, `withdraw_source`, `append_log`, `curate_conclusion`,
+`write_contract`, `manage_assets`, `publish_content`, `replace_scope`,
+`bulk_change`, `restore_version`, and separate administration/audit actions.
+History authority includes an issuance boundary. Organization administrators
+receive control-plane authority, not implicit content access; org content is
+restricted unless an explicit grant or declared all-members content preset
+provides it. Protected frontmatter changes are authorized by semantic effect,
+not merely by filename. Source evidence is append-only, withdrawal is explicit,
+and reuse of a withdrawn source coordinate requires an exact historical
+restore. Revocation and hosting denies are rechecked at the final pointer CAS.
 
 ## 7. The five verbs and the hub HTTP binding
 

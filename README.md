@@ -13,6 +13,9 @@ A db.md store is a folder anyone can read. link.md is how that folder gets:
 - **a verifiable history** — an append-only, hash-chained, signed feed that is
   simultaneously audit log, replication, subscription, and the export
   ([§5](SPEC.md#5-the-feed--wire-profile-v1))
+- **permissioned incremental sync** — changed blobs plus one atomic signed
+  brain commit, with per-path preconditions and authorization
+  ([§5.7](SPEC.md#57-wire-profile-v2-permissioned-incremental-commits))
 - **shareable authority** — owner-rooted capability grants: attenuable,
   expiring, revocable, delegable to agents ([§6](SPEC.md#6-grants))
 - **five verbs** — `resolve` / `sync` / `grant` / `propose` / `subscribe`
@@ -26,7 +29,7 @@ by openness, made mechanical.
 
 ## Status
 
-**v0 DRAFT, published from a running implementation.** The wire shapes in the
+**v0 DRAFT, published from running implementations.** The wire shapes in the
 spec are deployed and cross-verified by two independent implementations (a
 TypeScript hub, the Rust [`dbmd`](https://github.com/carloslfu/db.md) client
 — one binary, two specs, like `git`). [STATUS.md](STATUS.md) says exactly
