@@ -298,9 +298,12 @@ non-canonical encodings rather than normalize signed or addressed input.
 
 The v2 content root is a persistent 16-way hash-array mapped trie. Each path
 component is a leaf with `{name, kind, child_hash, bytes, nonce}`; its route is
-SHA-256 over the component plus the random 128-bit nonce. Branches expose slot
-and child hash only. This gives compact inclusion/non-inclusion proofs without
-revealing sibling names to a scoped reader. A commit reuses every unchanged
+SHA-256 over the component. The independently random 128-bit leaf nonce changes
+whenever that entry state changes, so a disclosed sibling/subtree hash is not a
+dictionary oracle for a guessed name or content. Branches expose slot and child
+hash only; the remaining route-prefix shape is documented structural leakage.
+This gives compact inclusion/non-inclusion proofs without revealing sibling
+names to a scoped reader. A commit reuses every unchanged
 blob and tree node. `null` is the sole empty content root. Portable paths MUST
 be NFC, relative, slash-separated, at most 1,024 UTF-8 bytes and 255 bytes per
 component, and free of dot components, control characters, Windows device
@@ -365,13 +368,25 @@ again after local installation or after its write, and only then advances its
 private accepted checkpoint. A lower sequence or different hash at an accepted
 sequence is rollback/equivocation.
 
-`materializer` names the deterministic hosted derived-state transform. The
-reference `dbmd-hosted-v1` transform rebuilds `index.md`/`index.jsonl` from the
-candidate source files after actor authorization and before whole-brain
-validation. It MUST change derived paths only. Its outputs are part of the
-signed content root and recovery delta, while the actor changeset continues to
-name the authorized source intent. Sync manifests omit these hosted catalogs;
-each full or scoped checkout rebuilds catalogs from exactly its readable view.
+`materializer` names the deterministic working-copy projection. The reference
+`dbmd-projection-v1` transform rebuilds `index.md`/`index.jsonl` from the signed
+authoritative files and materializes `assets.jsonl` from the signed asset root.
+Those derived files MUST NOT enter the content root or recovery delta. The hub
+rebuilds them ephemerally for complete-store validation, and each full/scoped
+checkout or export rebuilds them from exactly its readable view. Activating a
+different materializer is an explicit administrator migration commit; it never
+silently changes how an old commit materializes.
+
+For a self-custodied brain, `POST commits` returns `202
+brain_signature_required` after it has staged and validated one exact
+candidate. The full-read key holder pages the principal-bound
+`GET signing-challenges/<id>` manifest, verifies every proof, checks exact set
+equality against the requested post-mutation state, verifies the canonical
+changeset/actor/parent/root/materializer bindings, and only then signs the
+returned canonical commit bytes. The same mutation is retried with the
+challenge id and signature. A scoped writer cannot be given a brain-wide
+candidate manifest and therefore uses the encrypted proposal workflow; only a
+full-read key holder accepts and signs that proposal.
 
 The authenticated head response also labels the caller's effective content
 view as `full` or `scoped` and carries the current actor-specific control
@@ -396,6 +411,7 @@ The reference binding is rooted at
 | `POST downloads` | verify bounded manifest proofs and mint short-lived direct blob GET capabilities |
 | `POST uploads` | reserve direct transport for changed blobs |
 | `POST commits` | atomically authorize, validate, back up, and commit a changeset |
+| `GET signing-challenges/<id>?after=…&limit=…` | proof-carried exact candidate for self-custody verification/signing |
 | `GET history`, `GET history/blob`, `GET diff`, `GET trash` | permission-filtered history and recovery reads |
 | `GET/POST grants`, `DELETE grants/<id>`, `GET/PATCH policy` | v2 authority and company policy control plane |
 
