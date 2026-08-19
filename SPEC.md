@@ -184,8 +184,15 @@ Field semantics:
 - `brain` — the brain's multikey (§2.1).
 - `public_key` — the brain's full public key, `base64url(SPKI DER)`.
 - `kind` — `"push"` (the entry's `files` list is the complete resulting
-  manifest) or `"edit"` (`files` lists only changed paths; `removed` lists
-  deletions). Both commit the complete resulting store.
+  manifest) or `"edit"` (`files` is a change/invalidation disclosure). An
+  `edit` MUST list every created or byte-changed path and MAY additionally
+  reassert any unchanged path from the exact resulting pack; each listed entry
+  MUST match that pack. This deliberately accepts both minimal-delta entries
+  and historical hub entries that disclosed the full resulting manifest.
+  `removed` is the exact set of paths present in the previous pack and absent
+  from the resulting pack for either kind. Both kinds commit the complete
+  resulting store through `pack_sha256`; no v1 signed bytes are reinterpreted
+  as a partial store.
 - `op` — `"snapshot"` in profile v1: the entry addresses the full resulting
   store pack. Finer-grained ops are extension territory (§11).
 - `pack_sha256` — sha256 hex of the complete store pack after this entry.
