@@ -340,6 +340,35 @@ MUST fail. Inline changed blobs are bounded; larger changed blobs use expiring,
 principal-bound reservations and direct conditional upload. Before commit, the
 hub MUST re-read and re-hash every reserved object.
 
+Large destructive or exposure-changing mutations use impact-vector profile 1.
+The vector reports `creates`, `updates`, `deletes`, `withdrawals`, `renames`,
+`restores`, `asset_changes`, `public_expansions`, and
+`executable_activations`. The default exclusive upper bounds are 100 updates,
+25 deletes, 25 withdrawals, 50 renames, 50 restores, 100 asset changes, 10
+public expansions, and 5 executable activations. Creates are reported but do
+not independently trigger confirmation; request/storage bounds still apply.
+Crossing any one bound requires `bulk_change` over every affected coordinate,
+not merely the first path.
+
+The same guard sums actually committed effects over the preceding 15 minutes.
+The principal bound is twice each request default and the brain-wide bound is
+five times each request default. A no-op or failed attempt consumes neither
+window. A hub MAY lower these values through an ordered policy transition but
+MUST NOT raise or disable them without allocating a new impact-vector profile.
+
+Confirmation is two-step. The caller first submits the exact strict-head
+mutation with `preview_only:true`. When confirmation is required, the hub
+returns a 10-minute receipt bound to the stable principal, mutation and request
+digests, exact head, control revision, impact vector, and expiry, together with
+the 30-day logical-history recoverability boundary. The matching commit repeats
+the request with `bulk_preview_id` and `bulk_preview_digest`. Final admission
+recomputes the vector and rolling windows under the ordered brain/authority
+transaction, rechecks `bulk_change` scope, and consumes the preview atomically
+with the pointer transition. A changed head, control revision, request,
+principal, impact, expiry, or prior consumption cannot authorize a new effect.
+Idempotent retry of the already committed mutation still returns its original
+receipt.
+
 #### 5.7.3 Signed commit and head
 
 The brain key signs the canonical commit object. Its normative fields are:
@@ -371,9 +400,13 @@ authoritative for new writes.
 
 `actor_ref` addresses a separately signed actor claim bound to the principal,
 credential class, organization/role, grants used, mutation/request IDs,
-parent/result roots, counts, rebase result, control revision, and authorization
-time. The claim is audit evidence, not authority by itself; the hub MUST resolve
-live authority again at the final commit point.
+parent/result roots, applied/converged counts, the versioned count-only impact
+vector, rebase result, control revision, and authorization time. Persisting the
+impact vector in the immutable claim lets reconciliation reconstruct rolling
+bulk accounting and finalize a preview receipt if the pointer advanced but the
+relational transaction failed afterward. The claim is audit evidence, not
+authority by itself; the hub MUST resolve live authority again at the final
+commit point.
 
 The mutable head is a hub-signed pointer to `{brain, seq, commit_hash,
 feed_hash, content_root, asset_root, materializer, signer_epoch,
@@ -499,6 +532,12 @@ inherited monotonically by its brains and cannot be overridden by a brain rule.
 Adding or removing a deny is forward-only: it proves neither that older content
 was never committed nor that its bytes never reached staging or durable
 storage.
+
+`POST commits` also carries the bulk-confirmation exchange defined in §5.7.2:
+`preview_only:true` requests a permission-safe impact preview without advancing
+the head, while `bulk_preview_id` plus `bulk_preview_digest` confirm that exact
+mutation. Preview cannot be combined with proposal, opaque write-anchor, or
+self-custody signature-response modes.
 
 #### 5.7.5 Local three-way sync
 
