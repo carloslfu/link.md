@@ -345,11 +345,29 @@ hub MUST re-read and re-hash every reserved object.
 The brain key signs the canonical commit object. Its normative fields are:
 `v`, `seq`, `ts`, `brain`, `public_key`, `signer_epoch`, `control_revision`,
 `op:"changeset"`, `parent_commit`, `parent_root`, `state_root`,
-`parent_asset_root`, `asset_root`, `materializer`, `changes_hash`, `actor_ref`,
-and `prev_entry_hash`. The Ed25519 signature covers the canonical bytes of
-those fields without `sig`; the stored canonical object then adds `sig`. The
+`parent_asset_root`, `asset_root`, `materializer`, `changes_sha256`, `actor_ref`,
+`prev_entry_hash`, and `v1_bridge`. `v1_bridge` is always present. It is
+`null` for an empty-profile genesis and every non-genesis commit. The first v2
+commit of a non-empty v1 brain instead carries exactly `{head_seq, feed_hash,
+pack_sha256}`, binding the signed v2 roots to the last verified immutable v1
+snapshot. A bridge is invalid at any other sequence. The request hash also
+commits to this exact object or `null`, so idempotent replay cannot substitute
+a different history boundary. The Ed25519 signature covers the canonical bytes
+of those fields without `sig`; the stored canonical object then adds `sig`. The
 commit hash uses domain `v2/commit`; the feed hash is plain SHA-256 of the exact
 signed commit bytes. `prev_entry_hash` chains those feed hashes.
+
+Migration verifies the v1 pointer, feed signature, recovery marker, pack hash,
+and every authoritative byte before constructing the bridge. It MUST refuse
+non-portable or unclassified riding files and invalid db.md state; it MUST NOT
+silently rename, drop, or rewrite source/log bytes. Derived catalogs are
+regenerated and shown as a confirmation-bound projection diff. Each manifest
+asset is signed into the v2 asset root as either byte-verified `hosted` or an
+explicit owner-reviewed `withheld` declaration. Missing hosted bytes are an
+error, never evidence of withholding. A self-custodied migration is signed by
+the current brain-key holder over the same canonical bridge candidate. V1 feed
+and pack objects remain immutable after migration; only the v2 head is
+authoritative for new writes.
 
 `actor_ref` addresses a separately signed actor claim bound to the principal,
 credential class, organization/role, grants used, mutation/request IDs,
@@ -411,6 +429,7 @@ The reference binding is rooted at
 | `POST downloads` | verify bounded manifest proofs and mint short-lived direct blob GET capabilities |
 | `POST uploads` | reserve direct transport for changed blobs, bound to their exact content/asset coordinates |
 | `POST commits` | atomically authorize, validate, back up, and commit a changeset |
+| `POST migrate` | preview and confirm one exact verified v1-head to v2 genesis bridge |
 | `GET signing-challenges/<id>?after=…&limit=…` | proof-carried exact candidate for self-custody verification/signing |
 | `GET proposals?state=…&after=…&limit=…` | list permission-filtered proposal envelopes without changed bytes |
 | `GET proposals/<id>` | return one verified proposal descriptor and signed submission claim |
