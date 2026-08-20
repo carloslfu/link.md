@@ -460,6 +460,7 @@ The reference binding is rooted at
 | `GET files?commit=…&after=…&limit=…` | current readable manifest plus proofs |
 | `GET blob?commit=…&path=…&sha256=…` | one proven, readable blob |
 | `POST downloads` | verify bounded manifest proofs and mint short-lived direct blob GET capabilities |
+| `POST stream` | return one exact-head, permissioned, bounded multi-blob stream for proven readable files |
 | `POST uploads` | reserve direct transport for changed blobs, bound to their exact content/asset coordinates |
 | `POST commits` | atomically authorize, validate, back up, and commit a changeset |
 | `POST migrate` | preview and confirm one exact verified v1-head to v2 genesis bridge |
@@ -520,6 +521,21 @@ Capabilities are short-lived and address immutable objects; the client MUST
 still rehash every response and complete the final head barrier. This batching
 reduces hub authorization traffic without turning a content hash into a bearer
 capability or weakening per-principal rate limits.
+
+For ordinary files no larger than the binding's stream ceiling, clients SHOULD
+prefer `POST stream`. The request carries the same exact commit-bound inclusion
+claims as `downloads`, in requested order, and is capped at 256 files and 8 MiB
+of declared content. The response is `application/vnd.linkmd.v2-bulk-stream`:
+the eight ASCII bytes `LMD2STRM`, followed by one frame per claim, followed by a
+zero `u32` end marker. A frame is `u32be header_length`, canonical JSON
+`{"bytes":u64,"path":string,"sha256":hex,"v":2}`, then exactly `bytes` raw
+octets. Header length is bounded to 4096 bytes. The hub rechecks the current
+pointer and every path's live read authority immediately before issuing the
+stream. The client requires exact claim order/set equality, length, SHA-256,
+the end marker, no trailing bytes, and its normal final head/view/control
+barrier. A partial response installs nothing; a retry may request only files
+not already held in its private verified staging transaction. Files above the
+stream ceiling use the independently bounded direct capability lane.
 
 Every direct-upload declaration carries the exact sorted path coordinates that
 will reference its bytes. Content uses its ordinary store path; assets use the
