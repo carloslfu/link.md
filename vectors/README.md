@@ -3,7 +3,7 @@
 Cross-implementation test vectors for **wire profiles v1 and v2** (SPEC §5,
 §10).
 
-## v2-content-tree.json, v2-portable-paths.json, and v2-commit-bridge.json
+## v2-content-tree.json, v2-portable-paths.json, v2-commit-bridge.json, and v2-changeset-withheld.json
 
 The v2 vectors pin the domain-separated content-tree root, hiding-proof privacy
 expectations, and the portable path decisions shared by the TypeScript hub and
@@ -17,6 +17,11 @@ mandatory null-or-exact `v1_bridge` shape, deterministic Ed25519 signatures,
 domain-separated commit hashes, plain feed hashes, and semantic refusals for a
 missing/extra field, malformed bridge, or bridge after genesis. Its published
 private key is test material only.
+
+`v2-changeset-withheld.json` pins the exact additive canonical changeset bytes
+and domain hash for one checkout-local kept-home observation. It proves that
+old changesets remain byte-compatible while both implementations agree on the
+new sorted `withheld_links` plus `checkout_id` binding.
 
 ## feed-v1.json
 

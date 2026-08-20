@@ -327,7 +327,47 @@ node, a duplicate, a non-canonical encoding, or a node/hash mismatch is invalid.
 #### 5.7.2 Mutations
 
 A changeset has `v:2`, a stable caller-generated `mutation_id`, an optional
-reason, and a deterministically sorted, non-overlapping operation list:
+reason, and a deterministically sorted, non-overlapping operation list. It MAY
+also carry checkout-local kept-home observations:
+
+```json
+{
+  "withheld_links": [
+    { "source": "records/project.md", "target": "sources/private.md" }
+  ],
+  "checkout_id": "<lowercase sha256 pseudonym>"
+}
+```
+
+The two observation fields MUST be absent together or present together with a
+non-empty list. The list contains at most 65,535 unique pairs, sorted by the
+UTF-8 bytes of `source NUL target`; both coordinates are normalized riding
+Markdown paths other than `DB.md`. Each pair asserts only that the target path
+was safely present in that checkout but excluded by its local transfer policy
+when the changed, readable source was scanned. The client MUST NOT open or hash
+the excluded target merely to make this assertion and MUST NOT send its local
+policy file, patterns, unrelated kept-home filenames, or target bytes. The hub
+accepts a pair only when the same signed changeset changes `source`, the actor
+can read that source, its candidate bytes contain that exact wiki-link, and the
+complete candidate has no hosted target. Unused, duplicate, unreadable-source,
+or otherwise non-exact observations fail the whole mutation.
+
+`checkout_id` is a private-baseline-stored, stable 256-bit CSPRNG pseudonym. It
+MUST NOT be derived from the checkout path, content, policy, user identity, or
+another guessable input. Re-cloning creates a new pseudonym; continuing from an
+existing private baseline preserves it. The client never writes it into the
+brain directory or any riding file.
+
+An observation is information, never authority or company-wide lifecycle
+state. It does not grant access, change either signed root, imply hub custody,
+or overwrite another checkout. Current read UX scopes it to the exact stable
+principal, permission-view revision, checkout pseudonym, and unchanged source
+hash, and expires it; the reference profile uses 30 days. The accepted
+immutable commit retains only the fact needed to validate that unchanged
+source. A canonical company-wide "not hosted" state requires the typed
+withdrawal operation below.
+
+The operation list supports:
 
 - `put(path, expected, blob, bytes)` creates or replaces a file;
 - `delete(path, expected-blob)` removes a file;
@@ -336,7 +376,12 @@ reason, and a deterministically sorted, non-overlapping operation list:
 - `restore(path, source_seq, source_commit, source_path, expected, blob,
   bytes)` restores exact authorized historical bytes;
 - `withdraw_from_hosting(path, expected-blob, reason)` removes the hosted
-  coordinate while recording that stronger lifecycle intent.
+  coordinate while recording that stronger lifecycle intent;
+- `asset_put(path, expected-asset, asset)`, `asset_delete(path,
+  expected-asset)`, `asset_withdraw(path, expected-asset, reason)`, and
+  `asset_resume(path, expected-asset, asset)` apply the same distinction to a
+  signed asset leaf. `asset` binds blob SHA-256, byte length, media type,
+  sorted unique wrapper paths, requiredness, and hosted/withheld disposition.
 
 Every touched coordinate carries an exact precondition: `{kind:"absent"}` or
 `{kind:"blob",hash:<sha256>}`. Omitting preconditions is invalid. A hub applies
@@ -347,6 +392,20 @@ desired bytes are already current converges as a no-op. Any other same-path or
 rename-destination mismatch returns one atomic conflict set. An LLM may propose
 new bytes after a conflict, but it is never the concurrency mechanism and the
 hub never silently chooses a winner.
+
+`delete` means the coordinate should cease to exist. It MUST fail if unchanged
+documents still link to that content or asset. `withdraw_from_hosting` means
+the reviewed local bytes remain intentionally outside the hub: it requires an
+exact current hosted precondition, the relevant semantic permission (including
+`withdraw_source` for evidence), and a non-empty audit reason, then marks
+incoming links canonically withheld. Changing `.sevralocal` alone never emits
+either operation. A client offering explicit withdrawal MUST verify that the
+local coordinate is a safe regular file, is covered by the active kept-home
+policy, and exactly matches the current signed hosted content or asset leaf.
+Ordinary put/restore/resume clears carried missing-target disposition. Ordinary
+asset deletion clears it and is refused while backlinks remain. A withdrawn
+source coordinate cannot masquerade as new evidence later: it can return only
+through an exact authorized historical `restore`.
 
 `mutation_id` is idempotent per stable principal and brain. Repeating the same
 request returns its durable receipt; reusing the ID for different request bytes
@@ -596,6 +655,17 @@ issue and related path outside that view MUST be omitted. The client preserves
 those safe details under a stable validation-refusal machine code.
 Scope widening or narrowing starts a new verified view rather than merging
 newly visible or newly forbidden paths into an existing checkout.
+
+Human-readable slugs and handles are mutable aliases, never brain identity. A
+client pins trust, history, and sync baselines under the canonical brain ULID
+and stores a separate alias-to-ULID binding. If a previously pinned alias later
+resolves to a different ULID, every ordinary operation MUST fail with the old
+and new ids and leave both canonical histories untouched. Rebinding requires a
+separate explicit action that independently verifies the replacement brain,
+checks that the current alias resolution equals the proposed new id and the
+local binding equals the reviewed old id, and rewrites only that alias binding.
+Deleting and recreating a same-slug brain therefore cannot silently repurpose
+an existing checkout.
 
 The local operation is serialized per brain. A pull uses head H1, verifies the
 manifest/blobs, installs atomically, then requires H2 = H1 before saving its
