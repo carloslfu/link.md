@@ -310,6 +310,20 @@ component, and free of dot components, control characters, Windows device
 names, trailing dots/spaces, file/directory collisions, and Unicode/case-folded
 portable aliases.
 
+The profile v2 object binding stores logical HAMT nodes in deterministic bounded
+pages so a large first import, checkpoint, or recovery does not require one
+network object per filename. A page is canonical JSON
+`{kind:"page",nodes:[{bytes_base64,hash},...],root,v:1}`: `nodes` sorts by
+hash, contains exactly the first 512 unique logical nodes in depth-first
+preorder from `root` (branch children by ascending slot; a compressed child is
+the sole child), and is capped at 2 MiB. Every embedded `bytes_base64` decodes
+to the canonical logical node at `hash`; omitted descendants begin another
+page addressed by that unchanged logical hash. The physical object key is the
+page's logical `root`, so paging never changes a signed content/asset root or
+the proof grammar. Readers MUST also accept the original single canonical node
+at that key; writers emit pages. A page with a missing required node, an extra
+node, a duplicate, a non-canonical encoding, or a node/hash mismatch is invalid.
+
 #### 5.7.2 Mutations
 
 A changeset has `v:2`, a stable caller-generated `mutation_id`, an optional
