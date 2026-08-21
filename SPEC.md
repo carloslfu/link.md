@@ -544,6 +544,8 @@ The reference binding is rooted at
 | `GET commit?commit=…` | exact canonical signed commit bytes |
 | `GET feed?after=…&limit=…` | bounded contiguous commit replay |
 | `GET files?commit=…&after=…&limit=…` | current readable manifest plus proofs |
+| `GET files?commit=…&path=…` | one permission-filtered path and its complete content-root proof |
+| `GET files?commit=…&id=…` | one record/source path located by the exact-head validation certificate, plus its complete content-root proof |
 | `GET blob?commit=…&path=…&sha256=…` | one proven, readable blob |
 | `POST downloads` | verify bounded manifest proofs and mint short-lived direct blob GET capabilities |
 | `POST stream` | return one exact-head, permissioned, bounded multi-blob stream for proven readable files |
@@ -607,6 +609,21 @@ Capabilities are short-lived and address immutable objects; the client MUST
 still rehash every response and complete the final head barrier. This batching
 reduces hub authorization traffic without turning a content hash into a bearer
 capability or weakening per-principal rate limits.
+
+The two exact `files` forms are the v2 record-resolution binding. `path`
+resolution is proportional to path depth and MUST NOT enumerate the readable
+manifest. `id` resolution MAY use a content-light record-id index only when
+that index's validated sequence and commit hash exactly equal the signed
+pointer; lag returns a retryable conflict, absence returns the same no-leak
+not-found response as an unreadable path, and duplicate ids fail closed. The
+index is a locator, never content authority. In both forms the hub returns one
+path proof rooted at the requested current commit, rechecks live path authority
+and the pointer immediately before issuance, and exposes no sibling name.
+The client verifies the signed pointer and commit, the complete proof chain,
+the exact blob length and SHA-256, then parses the returned bytes and requires
+the requested path or `id` before advancing its trust checkpoint. A mutable
+document/query projection can neither supply nor authenticate the resolved
+record.
 
 For ordinary files no larger than the binding's stream ceiling, clients SHOULD
 prefer `POST stream`. The request carries the same exact commit-bound inclusion
@@ -774,6 +791,10 @@ GET /api/hub/brains/<brain>/resolve?path=<store-relative path>
 ```
 
 Resolves a single record to its content for a caller whose grant covers it.
+These endpoints are the profile-v1 binding. Under profile v2, a conforming
+client uses the exact `files?commit=…&path=…` or `files?commit=…&id=…` proof
+binding in §5.7.4 and accepts content only after the signed-root and downloaded
+byte checks described there.
 
 ### 7.2 sync
 
