@@ -383,6 +383,19 @@ The operation list supports:
   signed asset leaf. `asset` binds blob SHA-256, byte length, media type,
   sorted unique wrapper paths, requiredness, and hosted/withheld disposition.
 
+A source-to-source `rename` is the sole exact-byte evidence-promotion form. Its
+source and candidate destination MUST carry the same declared blob and byte
+length, the destination MUST be absent, and the actor MUST hold
+`promote_source` over both coordinates. An ordinary source put remains
+create-only under `append_source`; ordinary source update and delete remain
+invalid. A client MAY infer promotion from a local filesystem diff only when
+one hash has exactly one removed source and exactly one new absent-destination
+source. Duplicate-byte or multi-destination ambiguity MUST remain separate
+put/delete intent so the hub refuses it rather than guessing evidence identity.
+After an accepted promotion, a synchronizing client MUST advance its private
+baseline with the same exact rename before evaluating final convergence. It
+MUST NOT report `synced` if it cannot represent the accepted operation locally.
+
 Every touched coordinate carries an exact precondition: `{kind:"absent"}` or
 `{kind:"blob",hash:<sha256>}`. Omitting preconditions is invalid. A hub applies
 the whole changeset or none of it. If the base is stale, `rebase:"disjoint"`
@@ -713,7 +726,7 @@ Profile v2 retains attenuation, expiry, revocation, and server-side enforcement
 and makes the authorization vocabulary explicit. A grant is scoped to one
 exact file or path prefix and carries a set of actions such as `read_current`,
 `read_history`, `create_record`, `update_record`, `delete_record`,
-`append_source`, `withdraw_source`, `append_log`, `curate_conclusion`,
+`append_source`, `withdraw_source`, `promote_source`, `append_log`, `curate_conclusion`,
 `write_contract`, `manage_assets`, `publish_content`, `replace_scope`,
 `bulk_change`, `restore_version`, `propose_change`, `review_proposals`, and
 separate administration/audit actions. `propose_change` can enqueue a scoped
